@@ -83,7 +83,8 @@ class STMatrix(object):
             x_t = [self.get_matrix(self.pd_timestamps[i] - j * offset_frame) for j in depends[2]]
             y = self.get_matrix(self.pd_timestamps[i])
             if len_closeness > 0:
-                XC.append(np.vstack(x_c))
+                XC.append(np.dstack(x_c))
+                # XC.append(np.vstack(x_c))
             if len_period > 0:
                 XP.append(np.vstack(x_p))
             if len_trend > 0:

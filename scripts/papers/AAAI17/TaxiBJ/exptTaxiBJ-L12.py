@@ -4,7 +4,7 @@
 """
 from __future__ import print_function
 import os
-import cPickle as pickle
+import _pickle as pickle
 import time
 import numpy as np
 import h5py
@@ -15,14 +15,16 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint
 from deepst.models.STResNet import stresnet
 from deepst.config import Config
 import deepst.metrics as metrics
+import tensorflow as tf
 from deepst.datasets import TaxiBJ
 np.random.seed(1337)  # for reproducibility
 
 # parameters
 DATAPATH = Config().DATAPATH  # data path, you may set your own data path with a global envirmental variable DATAPATH
-CACHEDATA = True  # cache data or NOT
+CACHEDATA = False  # cache data or NOT
 path_cache = os.path.join(DATAPATH, 'CACHE')  # cache path
-nb_epoch = 500  # number of epoch at training stage
+# nb_epoch = 500  # number of epoch at training stage
+nb_epoch = 5
 nb_epoch_cont = 100  # number of epoch at training (cont) stage
 batch_size = 32  # batch size
 T = 48  # number of time intervals at a day
@@ -148,7 +150,7 @@ def main():
     print("training model...")
     ts = time.time()
     history = model.fit(X_train, Y_train,
-                        nb_epoch=nb_epoch,
+                        epochs=nb_epoch,
                         batch_size=batch_size,
                         validation_split=0.1,
                         callbacks=[early_stopping, model_checkpoint],

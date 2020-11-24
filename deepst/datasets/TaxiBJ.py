@@ -15,6 +15,7 @@ from . import load_stdata, stat
 from ..preprocessing import MinMaxNormalization, remove_incomplete_days, timestamp2vec
 from ..config import Config
 from .STMatrix import STMatrix
+import tensorflow as tf
 # np.random.seed(1337)  # for reproducibility
 
 # parameters
@@ -76,6 +77,10 @@ def load_meteorol(timeslots, fname=os.path.join(DATAPATH, 'TaxiBJ', 'BJ_Meteorol
     # print('meger shape:', merge_data.shape)
     return merge_data
 
+def save_obj(obj, file_path):
+    with open(file_path + '.pkl', 'wb') as f:
+        pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+
 
 def load_data(T=48, nb_flow=2, len_closeness=None, len_period=None, len_trend=None,
               len_test=None, preprocess_name='preprocessing.pkl',
@@ -97,6 +102,11 @@ def load_data(T=48, nb_flow=2, len_closeness=None, len_period=None, len_trend=No
         # remove a certain day which does not have 48 timestamps
         data, timestamps = remove_incomplete_days(data, timestamps, T)
         data = data[:, :nb_flow]
+        # Reorder data to have CWH
+        data = np.transpose(data, (0, 2, 3, 1))
+
+        # data = np.array(data)[np.array([0, 2, 3, 1])] # WRONG!!!
+        print(np.shape(data))
         data[data < 0] = 0.
         data_all.append(data)
         timestamps_all.append(timestamps)

@@ -8,6 +8,7 @@
 bak/
 backup/
 *.txt
+*.csv
 
 
 # Byte-compiled / optimized / DLL files
@@ -99,3 +100,6 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# VSC project settings
+.vscode
