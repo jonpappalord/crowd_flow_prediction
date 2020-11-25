@@ -12,11 +12,12 @@ import h5py
 from keras.optimizers import Adam
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 
-from deepst.models.STResNet import stresnet
 from deepst.config import Config
-import deepst.metrics as metrics
-import tensorflow as tf
 from deepst.datasets import TaxiBJ
+import deepst.metrics as metrics
+from deepst.models.STResNet import stresnet
+from deepst.postprocessing import print_heatmap
+import tensorflow as tf
 np.random.seed(1337)  # for reproducibility
 
 # parameters
@@ -51,7 +52,6 @@ if os.path.isdir(path_model) is False:
 if CACHEDATA and os.path.isdir(path_cache) is False:
     os.mkdir(path_cache)
 
-
 def build_model(external_dim):
     c_conf = (len_closeness, nb_flow, map_height,
               map_width) if len_closeness > 0 else None
@@ -76,7 +76,7 @@ def read_cache(fname):
     f = h5py.File(fname, 'r')
     num = int(f['num'].value)
     X_train, Y_train, X_test, Y_test = [], [], [], []
-    for i in xrange(num):
+    for i in range(num):
         X_train.append(f['X_train_%i' % i].value)
         X_test.append(f['X_test_%i' % i].value)
     Y_train = f['Y_train'].value
@@ -120,7 +120,7 @@ def main():
     else:
         X_train, Y_train, X_test, Y_test, mmn, external_dim, timestamp_train, timestamp_test = TaxiBJ.load_data(
             T=T, nb_flow=nb_flow, len_closeness=len_closeness, len_period=len_period, len_trend=len_trend, len_test=len_test,
-            preprocess_name='preprocessing.pkl', meta_data=False, meteorol_data=False, holiday_data=False)
+            preprocess_name='preprocessing.pkl', meta_data=True, meteorol_data=True, holiday_data=True)
         if CACHEDATA:
             cache(fname, X_train, Y_train, X_test, Y_test,
                   external_dim, timestamp_train, timestamp_test)
