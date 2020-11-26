@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 import os
-import cPickle as pickle
+import pickle
 import numpy as np
 
 from . import load_stdata
@@ -20,11 +20,15 @@ def load_data(T=24, nb_flow=2, len_closeness=None, len_period=None, len_trend=No
     assert(len_closeness + len_period + len_trend > 0)
     # load data
     data, timestamps = load_stdata(os.path.join(DATAPATH, 'BikeNYC', 'NYC14_M16x8_T60_NewEnd.h5'))
-    # print(timestamps)
-    # remove a certain day which does not have 48 timestamps
+    print(timestamps)
+    # remove a certain day which does not have 24 timestamps
     data, timestamps = remove_incomplete_days(data, timestamps, T)
     data = data[:, :nb_flow]
     data[data < 0] = 0.
+
+    # Reorder data to have CWH
+    data = np.transpose(data, (0, 2, 3, 1))
+
     data_all = [data]
     timestamps_all = [timestamps]
     # minmax_scale
@@ -36,7 +40,7 @@ def load_data(T=24, nb_flow=2, len_closeness=None, len_period=None, len_trend=No
     for d in data_all:
         data_all_mmn.append(mmn.transform(d))
 
-    fpkl = open('preprocessing.pkl', 'wb')
+    fpkl = open(preprocess_name, 'wb')
     for obj in [mmn]:
         pickle.dump(obj, fpkl)
     fpkl.close()
