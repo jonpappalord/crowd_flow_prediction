@@ -9,8 +9,10 @@ from utils.preprocessing_functions import MinMaxNormalization
 from sklearn.metrics import mean_squared_error
 
 RESULTDIR = "results/"+str(int(datetime.datetime.now().timestamp()))
-if os.path.isdir(RESULTDIR) is False:
-    os.mkdir(RESULTDIR)
+if os.path.isdir("results") is False:
+    os.mkdir("results")
+    if os.path.isdir(RESULTDIR) is False:
+        os.mkdir(RESULTDIR)
 
 
 def load_obj(file_path):
@@ -23,9 +25,7 @@ def print_heatmap(data, flow):
         flow: inflow or outlow heatmap
     """
     heatmap = data[0, :, :, flow]
-    np.shape(heatmap)
     for img in data[1:]:
-        # print(np.shape(i[:, :, 0]))
         heatmap += img[:, :, flow]
     plt.imshow(heatmap, cmap='hot', interpolation='nearest')
     plt.show()
@@ -68,6 +68,11 @@ def nrmse_quantile(data, data_pred, quantile, start_date, n_days=1, flow=1, samp
 
     decili = [d for d in np.array_split(data, quantile)]
     decili_pred = [d for d in np.array_split(data_pred, quantile)]
+    
+    for i in range(quantile):
+        plt.hist(decili[i])
+        plt.savefig("decili_distr"+str(i))
+        plt.clf()
 
     rmse_decili = np.array([(mean_squared_error(decili[i], decili_pred[i], squared=False),
                rmse_std(decili[i], decili_pred[i]))

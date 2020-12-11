@@ -9,6 +9,7 @@ bak/
 backup/
 *.txt
 *.csv
+*.png
 
 
 # Byte-compiled / optimized / DLL files

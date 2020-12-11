@@ -13,7 +13,7 @@ import h5py
 from keras.optimizers import Adam
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 
-print(sys.path.append("/mnt/d/ASE/Thesis/Project/CrowdFlowPrediction"))
+sys.path.append("/mnt/d/ASE/Thesis/Project/CrowdFlowPrediction")
 
 from utils.config import Config
 from utils.load_datasets import BikeNYC
@@ -34,10 +34,11 @@ lr = 0.0002  # learning rate
 len_closeness = 3  # length of closeness dependent sequence
 len_period = 1  # length of peroid dependent sequence
 len_trend = 1  # length of trend dependent sequence
-if len(sys.argv) == 1:
-    nb_residual_unit = 2  # number of residual units
-else:
-    nb_residual_unit = int(sys.argv[1])  # number of residual units
+
+# if len(sys.argv) == 1:
+nb_residual_unit = 2  # number of residual units
+# else:
+    # nb_residual_unit = int(sys.argv[1])  # number of residual units
 
 nb_flow = 2  # there are two types of flows: inflow and outflow
 # divide data into two subsets: Train & Test, of which the test set is the
@@ -276,14 +277,7 @@ def use_loaded_model():
           (score[0], score[1], score[1] * (mmn._max - mmn._min) / 2.))
     print("\nelapsed time (eval): %.3f seconds\n" % (time.time() - ts))
 
-    Y_pred = model.predict(X_test)
-
-    mmn = load_obj("preprocessing")
-
-    data = mmn.inverse_transform(Y_test)
-    data_pred = np.array(mmn.inverse_transform(Y_pred), dtype=int)
-
-    nrmse_quantile(Y_test, Y_pred, 10, 0, n_days=1, flow=1, sampling=24)
+    return model
 
 
 
