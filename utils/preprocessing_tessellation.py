@@ -53,6 +53,15 @@ def generate_fdf(FILENAME = "utils/2013-12 - Citi Bike trip data.csv"):
 
     return flow_df
 
+def generate_inflow_outflow_map(f):
+    # Outflow
+    f_outflow = f.groupby([pd.Grouper(key='starttime', freq='30min'),'origin']).sum()['flow']
+
+    # Inflow
+    f_inflow = f.groupby([pd.Grouper(key='starttime', freq='30min'),'destination']).sum()['flow']
+
+    return f_inflow, f_outflow
+
 def generate_adj_matrix(f, max_origin, max_destination, min_origin=271, min_destination=271):
     f = f.groupby([pd.Grouper(key='starttime', freq='30min'),'origin','destination']).sum()
     time = set()
