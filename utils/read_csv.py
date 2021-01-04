@@ -2,21 +2,16 @@ import igraph
 import fnmatch
 import geopandas as gpd
 import numpy as np
+import os
 import pandas as pd
 import pickle
 import skmob
 from shapely.geometry import Point
 from skmob.tessellation import tilers
+import time
 from zipfile import ZipFile
 
-
-
-CACHE = True
 # FILENAME = "utils/2013-12 - Citi Bike trip data.csv"
-FILENAME = "data/BikeNYC/BikeNYC.zip"
-
-filename_df = "NYC1500m60min.pkl"
-filename_save_df = 'df.pkl'
 
 def getIndexPosition(tessellation, position):
     for i, row in enumerate(tessellation):
@@ -25,19 +20,36 @@ def getIndexPosition(tessellation, position):
 
 def read_csv(
         tessellation = None, 
-        list_feature = ["starttime", "start station latitude", "start station longitude", "end station latitude", "end station longitude"]
+        list_feature = ["starttime", "start station latitude", "start station longitude", "end station latitude", "end station longitude"],
+        sample_time = "60min",
+        dataset_file = "data/BikeNYC/BikeNYC.zip",
+        CACHE = True,
+        # filename_df = "NYC1500m60min.pkl",
+        filename_df = "NYC_caso.pkl"
         ):
     """
     Given a csv file and a tessellation, returns a dataframe contaning origin destination and the time
+
+    Parameters
+    ----------
+    - tessellation = None, 
+    - list_feature = ["starttime", "start station latitude", "start station longitude", "end station latitude", "end station longitude"],
+    - sample_time = "60min",
+    - dataset_file = "data/BikeNYC/BikeNYC.zip",
+    - CACHE = True,
+    - filename_df = "NYC_caso.pkl": A list containing the neural network inputs 
+
+    Returns
+    -------
+    - df: the csv file as a Pandas DataFrame
     """
 
-    if CACHE:
-            with open(filename_df, "rb") as input_file:
-                df = pickle.load(input_file)
+    if os.path.exists(filename_df) and CACHE:
+        with open(filename_df, "rb") as input_file:
+            df = pickle.load(input_file)
     else:
-        print("Helloooooo")
-        if FILENAME.endswith('.zip'):
-            with ZipFile(FILENAME) as zipfiles:
+        if dataset_file.endswith('.zip'):
+            with ZipFile(dataset_file) as zipfiles:
                 file_list = zipfiles.namelist()
                 
                 #get only the csv files
@@ -45,10 +57,11 @@ def read_csv(
                 
                 #iterate with a list comprehension to get the individual dataframes
                 data = [pd.read_csv(zipfiles.open(file_name)) for file_name in csv_files]
-                print("La lunghezza è ", len(data))
                 df = pd.concat(data)
         else:
-            df = pd.read_csv(FILENAME, sep=',')
+            df = pd.read_csv(dataset_file, sep=',')
+
+        print("DataFrame read!")
         df = df[list_feature]
         df['origin'] = df.apply(lambda row: Point(row['start station longitude'], row['start station latitude']), axis=1)
         df['destination'] = df.apply(lambda row: Point(row['end station longitude'], row['end station latitude']), axis=1)
@@ -56,16 +69,19 @@ def read_csv(
         poligons = tessellation['geometry']
 
         df['origin'] = df.apply(lambda row: getIndexPosition(poligons, row['origin']), axis=1)
+        print("Origin column added") 
         df['destination'] = df.apply(lambda row: getIndexPosition(poligons, row['destination']), axis=1)
+        print("Destination column added") 
 
-        with open(filename_save_df, 'wb') as f:
+        with open(filename_df, 'wb') as f:
             pickle.dump(df, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     return df
 
 def get_xy_location(tessellation):
     """
-    Given a tessellation with longitude and latitude coordinate, returns a list of position in matrix and its size
+    Given a tessellation with longitude and latitude coordinates, 
+    returns a list of positions in a squared matrix for each square and its size
     """
     centroids = [el.centroid for el in tessellation['geometry']]
 
@@ -83,7 +99,8 @@ def get_xy_location(tessellation):
 
 def get_xy_map(df, m_shape):
     """
-    Returns a matrix with given sizes, corresponding to the given DataFrame
+    Given a dataframe and a matrix shape
+    Returns a matrix with given sizes and the timestamp for each record of the dataframe, corresponding to the given DataFrame
     """
     X = np.zeros(m_shape)
     time_samples = set()
@@ -97,7 +114,7 @@ def get_xy_map(df, m_shape):
         X[t][int(x)][int(y)] = flow['flow']
     return X, time_samples
 
-def df_to_matrix(df, tessellation, list_features=["origin", "destination", "starttime"], flows=2):
+def df_to_matrix(df, tessellation, list_features=["origin", "destination", "starttime"], sample_time="60min", flows=2):
     """"
     Given a dataframe and a tessellation returns a temporal matrix and its timeseries
     """
@@ -128,10 +145,10 @@ def df_to_matrix(df, tessellation, list_features=["origin", "destination", "star
     flow_df['origin'] = [tile_to_xy[str(el)] for el in flow_df['origin']]
     flow_df['destination'] = [tile_to_xy[str(el)] for el in flow_df['destination']]
 
-    n_timestamps = flow_df.groupby(pd.Grouper(key='starttime', freq='60min')).ngroups
+    n_timestamps = flow_df.groupby(pd.Grouper(key='starttime', freq=sample_time)).ngroups
 
-    f_out = flow_df.groupby([pd.Grouper(key='starttime', freq='60min'),'origin']).sum()
-    f_in = flow_df.groupby([pd.Grouper(key='starttime', freq='60min'),'destination']).sum()
+    f_out = flow_df.groupby([pd.Grouper(key='starttime', freq=sample_time),'origin']).sum()
+    f_in = flow_df.groupby([pd.Grouper(key='starttime', freq=sample_time),'destination']).sum()
 
     # Filling numpy array 
     X_dataset = np.empty([n_timestamps, x_size, y_size, flows])
@@ -146,6 +163,27 @@ def df_to_matrix(df, tessellation, list_features=["origin", "destination", "star
     time_string = [str(int(str(time_sample).replace("-", "").replace(" ","").replace(":", "")[:10])+1).encode('utf-8') for time_sample in time_samples]
 
     return X_dataset, time_string
+
+def csv_stub(
+            tile_size = 1500,
+            sample_time = "60min",
+            list_feature = ["starttime", "start station latitude", "start station longitude", "end station latitude", "end station longitude"],
+            dataset_file = "data/BikeNYC/BikeNYC.zip",
+            CACHE = True
+        ):
+    """
+    Returns a temporal matrix and its timeseries
+    """
+    print("Reading csv data")
+    ts = time.time()
+    filename_df = "NYC"+str(tile_size)+sample_time+".pkl"
+    tessellation = tilers.tiler.get("squared", base_shape="Manhattan, New York City, USA", meters=tile_size)
+    df = read_csv(tessellation, dataset_file = dataset_file, sample_time=sample_time, filename_df=filename_df)
+    X_data, time_stamp = df_to_matrix(df, tessellation, sample_time=sample_time)
+
+    print("\nelapsed time (read csv data): %.3f seconds\n" % (time.time() - ts))
+    return X_data, time_stamp
+    
 
 """
 tessellation = tilers.tiler.get("squared", base_shape="Manhattan, New York City, USA", meters=1500)
