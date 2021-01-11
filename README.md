@@ -1,44 +1,24 @@
-DeepST
-======
-[DeepST](https://github.com/lucktroy/DeepST): A **Deep Learning** Toolbox for Spatio-Temporal Data
+## Crowd Flow prediction - ST-ResNet in Tensorflow
 
-*Tested on `Windows Server 2012 R2`.*
+An implementation of the Deep Spatio-Temporal Residual Network (ST-ResNet) from the paper ["Deep Spatio-Temporal Residual Networks for Citywide Crowd Flows Prediction"](https://arxiv.org/abs/1610.00081).
 
-## Installation
 
-DeepST uses the following dependencies: 
-
-* [Keras](https://keras.io/#installation) and its dependencies are required to use DeepST. 
-* [Theano](http://deeplearning.net/software/theano/install.html#install) or [TensorFlow](https://github.com/tensorflow/tensorflow#download-and-setup), but **Theano** is recommended. 
-* numpy and scipy
-* HDF5 and [h5py](http://www.h5py.org/)
-* [pandas](http://pandas.pydata.org/)
-* CUDA 7.5 or latest version. And **cuDNN** is highly recommended. 
-
-To install DeepST, `cd` to the **DeepST** folder and run the install command:
-
-```
-python setup.py install
+# Install
+At first you need to clone this repository:
+```shell
+$ git clone https://github.com/jonpappalord/crowd_flow_prediction
+$ cd crowd_flow_prediction
 ```
 
-To install the development version:
-
-```
-python setup.py develop
-```
-
-## Data path
-
-The default `DATAPATH` variable is `DATAPATH=[path_to_DeepST]/data`. You may set your `DATAPATH` variable using
-
-```
-# Windows
-set DATAPATH=[path_to_your_data]
-
-# Linux
-export DATAPATH=[path_to_your_data]
+Create a new environment:
+```shell
+$ python -m venv yourenvname 
+$ source venv/bin/activate
 ```
 
-## License
 
-DeepST is released under the MIT License (refer to the LICENSE file for details).
+Launch the following command to install the required packages
+
+```shell
+$ pip install -r requirements.txt
+```
