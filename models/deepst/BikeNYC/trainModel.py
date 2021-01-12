@@ -44,6 +44,8 @@ path_model = 'temp/MODEL'
 
 # experiment_name = " ".join(["bike","NN"])
 
+if os.path.isdir('temp') is False:
+    os.makedir('temp')
 if os.path.isdir(path_result) is False:
     os.mkdir(path_result)
 if os.path.isdir(path_model) is False:
