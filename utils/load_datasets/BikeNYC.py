@@ -88,10 +88,12 @@ def load_data(T=24, nb_flow=2, len_closeness=None, len_period=None, len_trend=No
         X_test.append(meta_feature_test)
     else:
         metadata_dim = None
-    for _X in X_train:
-        print(_X.shape, )
-    print()
-    for _X in X_test:
-        print(_X.shape, )
-    print()
+
+    # for _X in X_train:
+    #     print(_X.shape, )
+    # print()
+    # for _X in X_test:
+    #     print(_X.shape, )
+    # print()
+
     return X_train, Y_train, X_test, Y_test, mmn, metadata_dim, timestamp_train, timestamp_test

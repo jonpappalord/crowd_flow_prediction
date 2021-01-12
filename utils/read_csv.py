@@ -25,7 +25,7 @@ def read_csv(
         dataset_file = "data/BikeNYC/BikeNYC.zip",
         CACHE = True,
         # filename_df = "NYC1500m60min.pkl",
-        filename_df = "NYC_caso.pkl"
+        filename_df = "NYC_temp.pkl"
         ):
     """
     Given a csv file and a tessellation, returns a dataframe contaning origin destination and the time
@@ -45,6 +45,7 @@ def read_csv(
     """
 
     if os.path.exists(filename_df) and CACHE:
+        print("Loading the existing dataframe: ", filename_df)
         with open(filename_df, "rb") as input_file:
             df = pickle.load(input_file)
     else:
@@ -176,7 +177,7 @@ def csv_stub(
     """
     print("Reading csv data")
     ts = time.time()
-    filename_df = "NYC"+str(tile_size)+sample_time+".pkl"
+    filename_df = "NYC"+str(tile_size)+sample_time+"_df.pkl"
     tessellation = tilers.tiler.get("squared", base_shape="Manhattan, New York City, USA", meters=tile_size)
     df = read_csv(tessellation, dataset_file = dataset_file, sample_time=sample_time, filename_df=filename_df)
     X_data, time_stamp = df_to_matrix(df, tessellation, sample_time=sample_time)
