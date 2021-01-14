@@ -115,6 +115,24 @@ def get_xy_map(df, m_shape):
         X[t][int(x)][int(y)] = flow['flow']
     return X, time_samples
 
+def remove_empty_rows(X_dataset, flows):
+    X_new = []
+    X_sum = []
+    for i in range(flows):
+        X_new.append(X_dataset[:,:,:,i])
+        X_sum.append(np.add.reduce(X_new[i]))
+
+        X_new[i] = X_new[i][:,~(X_sum[i]==0).all(1)]    # Removing empty rows
+        X_new[i] = X_new[i][:,:,~(X_sum[i].T==0).all(1)]    # Removing empty columns
+
+    X_dataset = np.empty([X_dataset.shape[0], X_new[0].shape[1], X_new[0].shape[2], flows])
+
+    for i in range(flows):
+        X_dataset[:,:,:,i] = X_new[i]
+
+    return X_dataset
+
+
 def df_to_matrix(df, tessellation, list_features=["origin", "destination", "starttime"], sample_time="60min", flows=2):
     """"
     Given a dataframe and a tessellation returns a temporal matrix and its timeseries
@@ -155,8 +173,14 @@ def df_to_matrix(df, tessellation, list_features=["origin", "destination", "star
     X_dataset = np.empty([n_timestamps, x_size, y_size, flows])
     
     print("Getting xy map")
-    X_dataset[:,:,:,0], _ = get_xy_map(f_in, [n_timestamps, x_size, y_size]) # Inflow
-    X_dataset[:,:,:,1], time_samples = get_xy_map(f_out, [n_timestamps, x_size, y_size]) # Outflow
+    for i in range(flows):
+        X_dataset[:,:,:,i], time_samples = get_xy_map(f_in, [n_timestamps, x_size, y_size])
+    # TODO: delete:
+    # X_dataset[:,:,:,0], _ = get_xy_map(f_in, [n_timestamps, x_size, y_size]) # Inflow
+    # X_dataset[:,:,:,1], time_samples = get_xy_map(f_out, [n_timestamps, x_size, y_size]) # Outflow
+
+    # Reduce size, by removing rows and columns without data
+    X_dataset = remove_empty_rows(X_dataset, flows)
 
     time_samples = list(time_samples)
 
