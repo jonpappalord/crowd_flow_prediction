@@ -2,6 +2,7 @@
 """ 
     THEANO_FLAGS="device=gpu0" python trainTaxiBJ.py
 """
+# TODO delete file!
 from __future__ import print_function
 import os
 import sys
@@ -12,13 +13,15 @@ import h5py
 
 from keras.optimizers import Adam
 from keras.callbacks import EarlyStopping, ModelCheckpoint
+from skmob.tessellation import tilers
 
-sys.path.append("/mnt/d/ASE/Thesis/Project/CrowdFlowPrediction")
+# sys.path.append("/mnt/d/ASE/Thesis/Project/CrowdFlowPrediction")
 
 from utils.config import Config
 from utils.load_datasets import BikeNYC
 import utils.metrics as metrics
 from utils.postprocessing import print_heatmap, nrmse_quantile
+from utils.read_csv import read_csv, df_to_matrix, csv_stub
 from models.deepst.STResNet import stresnet
 np.random.seed(1337)  # for reproducibility
 
@@ -36,16 +39,18 @@ len_period = 1  # length of peroid dependent sequence
 len_trend = 1  # length of trend dependent sequence
 
 # if len(sys.argv) == 1:
-nb_residual_unit = 2  # number of residual units
+nb_residual_unit = 4  # number of residual units
 # else:
     # nb_residual_unit = int(sys.argv[1])  # number of residual units
 
 nb_flow = 2  # there are two types of flows: inflow and outflow
 # divide data into two subsets: Train & Test, of which the test set is the
-# last 4 weeks
-days_test = 7 * 4
+# last 10 days
+days_test = 10
 len_test = T * days_test
-map_height, map_width = 16, 8  # grid size
+# map_height, map_width = 16, 8  # grid size
+
+tile_size = 1500 # Tile size in meters
 path_result = 'RET'
 path_model = 'MODEL'
 
@@ -61,7 +66,7 @@ def load_obj(file_path):
     with open(file_path + '.pkl', 'rb') as f:
         return pickle.load(f)
 
-def build_model(external_dim):
+def build_model(external_dim, map_height=16, map_width=8):
     c_conf = (len_closeness, nb_flow, map_height,
               map_width) if len_closeness > 0 else None
     p_conf = (len_period, nb_flow, map_height,
@@ -129,7 +134,7 @@ def main():
     else:
         X_train, Y_train, X_test, Y_test, mmn, external_dim, timestamp_train, timestamp_test = BikeNYC.load_data(
             T=T, nb_flow=nb_flow, len_closeness=len_closeness, len_period=len_period, len_trend=len_trend, len_test=len_test,
-            preprocess_name='preprocessing.pkl', meta_data=True)
+            preprocess_name='my_preprocessing.pkl', meta_data=True)
         if CACHEDATA:
             cache(fname, X_train, Y_train, X_test, Y_test,
                   external_dim, timestamp_train, timestamp_test)
@@ -144,8 +149,8 @@ def main():
 
     ts = time.time()
     model = build_model(external_dim)
-    hyperparams_name = 'c{}.p{}.t{}.resunit{}.lr{}'.format(
-        len_closeness, len_period, len_trend, nb_residual_unit, lr)
+    hyperparams_name = 'Tile{}.c{}.p{}.t{}.resunit{}.lr{}'.format(
+        tile_size, len_closeness, len_period, len_trend, nb_residual_unit, lr)
     fname_param = os.path.join('MODEL', '{}.best.h5'.format(hyperparams_name))
 
     early_stopping = EarlyStopping(monitor='val_rmse', patience=2, mode='min')
@@ -212,75 +217,6 @@ def main():
           (score[0], score[1], score[1] * (mmn._max - mmn._min) / 2.))
     print("\nelapsed time (eval cont): %.3f seconds\n" % (time.time() - ts))
 
-def use_loaded_model():
-    print("loading data...")
-    ts = time.time()
-    fname = os.path.join(DATAPATH, 'CACHE', 'BikeNYC_C{}_P{}_T{}.h5'.format(
-        len_closeness, len_period, len_trend))
-    if os.path.exists(fname) and CACHEDATA:
-        X_train, Y_train, X_test, Y_test, mmn, external_dim, timestamp_train, timestamp_test = read_cache(
-            fname)
-        print("load %s successfully" % fname)
-    else:
-        X_train, Y_train, X_test, Y_test, mmn, external_dim, timestamp_train, timestamp_test = BikeNYC.load_data(
-            T=T, nb_flow=nb_flow, len_closeness=len_closeness, len_period=len_period, len_trend=len_trend, len_test=len_test,
-            preprocess_name='preprocessing.pkl', meta_data=True)
-        if CACHEDATA:
-            cache(fname, X_train, Y_train, X_test, Y_test,
-                  external_dim, timestamp_train, timestamp_test)
-
-    print("\n days (test): ", [v[:8] for v in timestamp_test[0::T]])
-    print("\nelapsed time (loading data): %.3f seconds\n" % (time.time() - ts))
-
-    print('=' * 10)
-    print("compiling model...")
-    print(
-        "**at the first time, it takes a few minites to compile if you uses [Theano] as the backend**")
-
-    ts = time.time()
-    model = build_model(external_dim)
-    hyperparams_name = 'c{}.p{}.t{}.resunit{}.lr{}'.format(
-        len_closeness, len_period, len_trend, nb_residual_unit, lr)
-
-    fname_param = os.path.join(
-        'MODEL', '{}.cont.best.h5'.format(hyperparams_name))
-
-    early_stopping = EarlyStopping(monitor='val_rmse', patience=2, mode='min')
-    model_checkpoint = ModelCheckpoint(
-        fname_param, monitor='val_rmse', verbose=0, save_best_only=True, mode='min')
-
-    print("\nelapsed time (compiling model): %.3f seconds\n" %
-          (time.time() - ts))
-
-    ts = time.time()
-    model = build_model(external_dim)
-    hyperparams_name = 'c{}.p{}.t{}.resunit{}.lr{}'.format(
-        len_closeness, len_period, len_trend, nb_residual_unit, lr)
-    fname_param = os.path.join('MODEL', '{}.best.h5'.format(hyperparams_name))
-
-    early_stopping = EarlyStopping(monitor='val_rmse', patience=2, mode='min')
-    model_checkpoint = ModelCheckpoint(
-        fname_param, monitor='val_rmse', verbose=0, save_best_only=True, mode='min')
-
-    print("\nelapsed time (compiling model): %.3f seconds\n" %
-          (time.time() - ts))
-
-          
-    model.load_weights(fname_param)
-    score = model.evaluate(X_train, Y_train, batch_size=Y_train.shape[
-                           0] // 48, verbose=0)
-    print('Train score: %.6f Train rmse: %.6f %.6f' %
-          (score[0], score[1], score[1] * (mmn._max - mmn._min) / 2.))
-    score = model.evaluate(
-        X_test, Y_test, batch_size=Y_test.shape[0], verbose=0)
-    print('Test score: %.6f Test rmse: %.6f %.6f' %
-          (score[0], score[1], score[1] * (mmn._max - mmn._min) / 2.))
-    print("\nelapsed time (eval): %.3f seconds\n" % (time.time() - ts))
-
-    return model
-
-
 
 if __name__ == '__main__':
-    # main()
-    use_loaded_model()
+    main()
