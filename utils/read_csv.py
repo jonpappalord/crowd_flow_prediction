@@ -48,35 +48,30 @@ def read_csv(
     - df: the csv file as a Pandas DataFrame
     """
 
-    if os.path.exists(filename_df) and CACHE:
-        print("Loading the existing dataframe: ", filename_df)
-        with open(filename_df, "rb") as input_file:
-            df = pickle.load(input_file)
+    if dataset_file.endswith('.zip'):
+        with ZipFile(dataset_file) as zipfiles:
+            file_list = zipfiles.namelist()
+            
+            #get only the csv files
+            csv_files = fnmatch.filter(file_list, "*.csv")
+            
+            #iterate with a list comprehension to get the individual dataframes
+            data = [pd.read_csv(zipfiles.open(file_name)) for file_name in csv_files]
+            df = pd.concat(data)
     else:
-        if dataset_file.endswith('.zip'):
-            with ZipFile(dataset_file) as zipfiles:
-                file_list = zipfiles.namelist()
-                
-                #get only the csv files
-                csv_files = fnmatch.filter(file_list, "*.csv")
-                
-                #iterate with a list comprehension to get the individual dataframes
-                data = [pd.read_csv(zipfiles.open(file_name)) for file_name in csv_files]
-                df = pd.concat(data)
-        else:
-            df = pd.read_csv(dataset_file, sep=',')
+        df = pd.read_csv(dataset_file, sep=',')
 
-        print("DataFrame read!")
-        df = df[list_feature]
-        df['origin'] = df.apply(lambda row: Point(row['start station longitude'], row['start station latitude']), axis=1)
-        df['destination'] = df.apply(lambda row: Point(row['end station longitude'], row['end station latitude']), axis=1)
+    print("DataFrame read!")
+    df = df[list_feature]
+    df['origin'] = df.apply(lambda row: Point(row['start station longitude'], row['start station latitude']), axis=1)
+    df['destination'] = df.apply(lambda row: Point(row['end station longitude'], row['end station latitude']), axis=1)
 
-        poligons = tessellation['geometry']
+    poligons = tessellation['geometry']
 
-        df['origin'] = df.apply(lambda row: getIndexPosition(poligons, row['origin']), axis=1)
-        print("Origin column added") 
-        df['destination'] = df.apply(lambda row: getIndexPosition(poligons, row['destination']), axis=1)
-        print("Destination column added") 
+    df['origin'] = df.apply(lambda row: getIndexPosition(poligons, row['origin']), axis=1)
+    print("Origin column added") 
+    df['destination'] = df.apply(lambda row: getIndexPosition(poligons, row['destination']), axis=1)
+    print("Destination column added") 
 
     return df
 
@@ -89,7 +84,7 @@ def get_xy_location(tessellation):
 
     x_list, y_list = [], []
     for el in tessellation['geometry']:
-        x_list.append(el.centroid.x)  
+        x_list.append(el.centroid.x) # TODO verify Longitude ? 
         y_list.append(el.centroid.y)
     x_list = sorted(list(set(x_list)))
     y_list = sorted(list(set(y_list)))
