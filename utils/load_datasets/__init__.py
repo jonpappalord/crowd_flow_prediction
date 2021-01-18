@@ -9,6 +9,11 @@ def load_stdata(fname):
     f.close()
     return data, timestamps
 
+def save_stdata(fname, data, timestamps):
+    h5 = h5py.File(fname, 'w')
+    h5.create_dataset('data', data=data)
+    h5.create_dataset('date', data=timestamps)
+    h5.close()
 
 def stat(fname):
     def get_nb_timeslot(f):

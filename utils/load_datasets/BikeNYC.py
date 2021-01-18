@@ -15,22 +15,20 @@ np.random.seed(1337)  # for reproducibility
 DATAPATH = Config().DATAPATH
 
 
-def load_data(T=24, nb_flow=2, len_closeness=None, len_period=None, len_trend=None, len_test=None, preprocess_name='preprocessing.pkl', meta_data=True, stdata=None):
+def load_data(T=24, nb_flow=2, len_closeness=None, len_period=None, len_trend=None, len_test=None, preprocess_name='preprocessing.pkl', meta_data=True, data_name='NYC14_M16x8_T60_NewEnd.h5'):
     assert(len_closeness + len_period + len_trend > 0)
     
-    # load data
-    if stdata is None:
-        data, timestamps = load_stdata(os.path.join(DATAPATH, 'BikeNYC', 'NYC14_M16x8_T60_NewEnd.h5'))
-        # print(timestamps)
-        # remove a certain day which does not have 24 timestamps
-        data, timestamps = remove_incomplete_days(data, timestamps, T)
-        data = data[:, :nb_flow]
-        data[data < 0] = 0.
+    data, timestamps = load_stdata(os.path.join(DATAPATH, 'BikeNYC', data_name))
+    print(timestamps)
+    # remove a certain day which does not have 24 timestamps
+    data, timestamps = remove_incomplete_days(data, timestamps, T)
 
+    if data_name == 'NYC14_M16x8_T60_NewEnd.h5':
         # Reorder data to have CWH
         data = np.transpose(data, (0, 2, 3, 1))
-    else:
-        data, timestamps = stdata
+    
+    data = data[:, :, :, :nb_flow]
+    data[data < 0] = 0.
 
     data_all = [data]
     timestamps_all = [timestamps]
