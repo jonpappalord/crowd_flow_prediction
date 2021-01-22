@@ -16,7 +16,8 @@ from zipfile import ZipFile
 # parameters
 DATAPATH = Config().DATAPATH
 
-# TODO: Try spatial join (sjoin di geopandas)
+def return_tilers(meters):
+    return tilers.tiler.get("squared", base_shape="New York City, USA", meters=meters)
 
 def getIndexPosition(tessellation, position):
     for i, row in enumerate(tessellation):
