@@ -14,16 +14,20 @@ from skmob.tessellation import tilers
 # sys.path.append("/mnt/d/ASE/Thesis/Project/CrowdFlowPrediction")
 
 from utils.cache import save_matrix_in_cache, read_matrix_from_cache
+from utils.config import Config
 from utils.load_datasets import BikeNYC
 import utils.metrics as metrics
 from utils.postprocessing import print_heatmap, nrmse_quantile
 from utils.read_csv import csv_stub
 from models.deepst.STResNet import stresnet
+
+DATAPATH = Config().DATAPATH
 np.random.seed(1337)  # for reproducibility
 
 # tile_size = 1500
 # sample_time = "60min"
 
+CACHE_DATA = False
 # nb_epoch = 500  # number of epoch at training stage
 batch_size = 32  # batch size
 T = 24  # number of time intervals at a day
@@ -128,24 +132,27 @@ def train_and_evaluate(tile_size, sample_time, nb_epoch, exp):
     # load data
     print("loading data...")
     ts = time.time()
-    X_dataset, time_string = csv_stub(tile_size, sample_time)
+    # X_dataset, time_string = csv_stub(tile_size, sample_time)
     
     preprocessing_file = "NYC"+str(tile_size)+sample_time+"_scaler.pkl"
     matrix_file = "NYC"+str(tile_size)+sample_time+"_matrix.h5"
+    # data_name =  os.path.join(DATAPATH, 'BikeNYC',"NYC"+str(tile_size)+sample_time+"_df.h5")
+    data_name = os.path.join(DATAPATH, 'BikeNYC', "MANHATTAN__SIZE500_TIME_60min_df.h5")
+    # data_name =  "NYC"+str(tile_size)+sample_time+"_df.h5"
     
     # Getting data in matrix representation
     X_train, Y_train, X_test, Y_test, mmn, external_dim, timestamp_train, timestamp_test = \
-        read_matrix_from_cache(matrix_file, preprocessing_file) if os.path.exists(matrix_file) else BikeNYC.load_data(
+        read_matrix_from_cache(matrix_file, preprocessing_file) if os.path.exists(matrix_file) and CACHE_DATA else BikeNYC.load_data(
             T=T, nb_flow=nb_flow, len_closeness=len_closeness, len_period=len_period, len_trend=len_trend, len_test=len_test,
-            preprocess_name=preprocessing_file, meta_data=True, stdata=(X_dataset, time_string))
+            preprocess_name=preprocessing_file, meta_data=True, data_name=data_name)
     save_matrix_in_cache(matrix_file, X_train, Y_train, X_test, Y_test, external_dim, timestamp_train, timestamp_test)
-    
+
     print("\n days (test): ", [v[:8] for v in timestamp_test[0::T]])
     print("\nelapsed time (loading data): %.3f seconds\n" % (time.time() - ts))
 
     print("\ncompiling model...")
     ts = time.time()
-    model = build_model(external_dim, X_dataset.shape[1], X_dataset.shape[2])
+    model = build_model(external_dim, np.shape(X_train[0])[1], np.shape(X_train[0])[2])
 
     hyperparams_name = 'Tile{}.freq{}.c{}.p{}.t{}.resunit{}.lr{}.bs{}'.format(
         tile_size, sample_time, len_closeness, len_period, len_trend, nb_residual_unit, lr, batch_size)
@@ -158,7 +165,7 @@ def train_and_evaluate(tile_size, sample_time, nb_epoch, exp):
     print("\nelapsed time (compiling model): %.3f seconds\n" %
         (time.time() - ts))
 
-    if os.path.exists(fname_param):
+    if os.path.exists(fname_param) and CACHE_DATA:
         print("loading trained model...")
         model.load_weights(fname_param)
     else:
@@ -174,7 +181,7 @@ def train_and_evaluate(tile_size, sample_time, nb_epoch, exp):
             path_model, '{}.h5'.format(hyperparams_name)), overwrite=True)
         pickle.dump((history.history), open(os.path.join(
             path_result, '{}.history.pkl'.format(hyperparams_name)), 'wb'))
-        print("\nelapsed time (training): %.3f seconds\n" % (time.time() - ts))
+    print("\nelapsed time (training): %.3f seconds\n" % (time.time() - ts))
 
     print('evaluating using the model that has the best loss on the valid set')
     ts = time.time()
