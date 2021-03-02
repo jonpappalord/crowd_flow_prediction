@@ -18,7 +18,7 @@ from utils.config import Config
 from utils.load_datasets import BikeNYC
 import utils.metrics as metrics
 from utils.postprocessing import print_heatmap, nrmse_quantile
-from utils.read_csv import csv_stub
+# from utils.read_csv import csv_stub
 from models.deepst.STResNet import stresnet
 
 DATAPATH = Config().DATAPATH
@@ -49,7 +49,7 @@ path_model = 'temp/MODEL'
 # experiment_name = " ".join(["bike","NN"])
 
 if os.path.isdir('temp') is False:
-    os.makedir('temp')
+    os.mkdir('temp')
 if os.path.isdir(path_result) is False:
     os.mkdir(path_result)
 if os.path.isdir(path_model) is False:
@@ -72,7 +72,7 @@ def build_model(external_dim, map_height=16, map_width=8):
     # plot(model, to_file='model.png', show_shapes=True)
     return model
 
-def make_report(params, metrics, experiment_id, model, X_test, mmn, Y_test):
+def make_report(params, metrics, experiment_id, model, X_test, mmn, Y_test, history):
     """
         Create a mlflow report
 
@@ -90,6 +90,18 @@ def make_report(params, metrics, experiment_id, model, X_test, mmn, Y_test):
 
     # Logging model metrics
     mlflow.log_metrics(metrics)
+
+    for epoch, tr_rmse in enumerate(history.history['rmse']):
+            mlflow.log_metric(key="Training rmse", value = tr_rmse*(mmn._max - mmn._min) / 2., step = epoch+1)
+
+    for epoch, val_rmse in enumerate(history.history['val_rmse']):
+        mlflow.log_metric(key="Validation rmse", value = val_rmse*(mmn._max - mmn._min) / 2., step = epoch+1)
+
+    for epoch, tr_loss in enumerate(history.history['loss']):
+            mlflow.log_metric(key="Training loss", value = tr_loss, step = epoch+1)
+
+    for epoch, val_loss in enumerate(history.history['val_loss']):
+        mlflow.log_metric(key="Validation loss", value = val_loss, step = epoch+1)
     
     fig_name = "ts"+str(params['tile_size'])+"_f"+str(params['sample_time'])
     
@@ -132,19 +144,21 @@ def train_and_evaluate(tile_size, sample_time, nb_epoch, exp):
     # load data
     print("loading data...")
     ts = time.time()
-    # X_dataset, time_string = csv_stub(tile_size, sample_time)
     
     preprocessing_file = "NYC"+str(tile_size)+sample_time+"_scaler.pkl"
-    matrix_file = "NYC"+str(tile_size)+sample_time+"_matrix.h5"
+    matrix_file = "NYC"+str(tile_size)+sample_time+"_matrixB.h5"
     # data_name =  os.path.join(DATAPATH, 'BikeNYC',"NYC"+str(tile_size)+sample_time+"_df.h5")
-    data_name = os.path.join(DATAPATH, 'BikeNYC', "MANHATTAN__SIZE500_TIME_60min_df.h5")
-    # data_name =  "NYC"+str(tile_size)+sample_time+"_df.h5"
+    # data_name = os.path.join(DATAPATH, 'BikeNYC', "MANHATTAN_SIZE500_TIME_60min_df.h5")
+    data_name = os.path.join(DATAPATH, 'BikeNYC', "MANHATTAN_SIZE"+str(tile_size)+"_TIME_"+sample_time+"_df.h5")
     
     # Getting data in matrix representation
     X_train, Y_train, X_test, Y_test, mmn, external_dim, timestamp_train, timestamp_test = \
         read_matrix_from_cache(matrix_file, preprocessing_file) if os.path.exists(matrix_file) and CACHE_DATA else BikeNYC.load_data(
             T=T, nb_flow=nb_flow, len_closeness=len_closeness, len_period=len_period, len_trend=len_trend, len_test=len_test,
             preprocess_name=preprocessing_file, meta_data=True, data_name=data_name)
+    print("Reading from:", matrix_file)
+    # X_train, Y_train, X_test, Y_test, mmn, external_dim, timestamp_train, timestamp_test = \
+    #     read_matrix_from_cache(matrix_file, preprocessing_file)
     save_matrix_in_cache(matrix_file, X_train, Y_train, X_test, Y_test, external_dim, timestamp_train, timestamp_test)
 
     print("\n days (test): ", [v[:8] for v in timestamp_test[0::T]])
@@ -197,18 +211,20 @@ def train_and_evaluate(tile_size, sample_time, nb_epoch, exp):
     print("\nelapsed time (eval): %.3f seconds\n" % (time.time() - ts))
 
     params = {
-        "tile_size": tile_size,
-        "sample_time":sample_time,
-        # "batch_size":batch_size,
-        # "lr":lr,
-        # "nb_residual_unit":nb_residual_unit
+        "tile_size" : tile_size,
+        "sample_time" : sample_time,
+        "batch_size" : batch_size,
+        "lr" : lr,
+        "nb_residual_unit" : nb_residual_unit,
+        "epochs" : nb_epoch
     }
     metrics = {
-        "train RMSE": score[1] * (mmn._max - mmn._min) / 2.,
+        "train RMSE" : score[1] * (mmn._max - mmn._min) / 2.,
         "test RMSE" : test_score[1] * (mmn._max - mmn._min) / 2.
         }
 
-    make_report(params, metrics, exp.experiment_id, model, X_test, mmn, Y_test)
+
+    make_report(params, metrics, exp.experiment_id, model, X_test, mmn, Y_test, history)
 
     
 
