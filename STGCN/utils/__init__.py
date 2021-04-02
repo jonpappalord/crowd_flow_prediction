@@ -66,3 +66,20 @@ def generate_dataset(X, num_timesteps_input, num_timesteps_output):
 
     return torch.from_numpy(np.array(features)), \
            torch.from_numpy(np.array(target))
+
+def get_origin_destination_matrix(df):
+    df['tile_ID_origin'] -= df['tile_ID_origin'].min()
+    df['tile_ID_destination'] -= df['tile_ID_destination'].min()
+
+    time = set()
+    x_axis = int(df['tile_ID_origin'].max())+1
+    y_axis = int(df['tile_ID_destination'].max())+1
+    origin_dest = np.zeros([len(df['starttime'].unique()), x_axis, y_axis])
+    # print("Shape origin Destination matrix: ",origin_dest.shape)
+    t = -1
+
+    for el in df.itertuples():
+        if(el.starttime not in time):
+            time.add(el.starttime)
+            t += 1
+        origin_dest[t, el.tile_ID_origin, el.tile_ID_destination] += el.flow
