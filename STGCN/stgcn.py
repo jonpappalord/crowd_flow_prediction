@@ -10,7 +10,7 @@ class TimeBlock(nn.Module):
     a graph in isolation.
     """
 
-    def __init__(self, in_channels, out_channels, kernel_size=3):
+    def __init__(self, in_channels, out_channels, kernel_size=2):
         """
         :param in_channels: Number of input features at each node in each time
         step.
@@ -31,11 +31,14 @@ class TimeBlock(nn.Module):
         num_timesteps_out, num_features_out=out_channels)
         """
         # Convert into NCHW format for pytorch to perform convolutions.
+#         print("TimeBlock X shape: ", X.shape)
         X = X.permute(0, 3, 1, 2)
+#         print("TimeBlock X permute shape: ", X.shape)
         temp = self.conv1(X) + torch.sigmoid(self.conv2(X))
         out = F.relu(temp + self.conv3(X))
         # Convert back from NCHW to NHWC
         out = out.permute(0, 2, 3, 1)
+#         print("TimeBlock out shape: ", out.shape)
         return out
         
 
@@ -111,9 +114,13 @@ class STGCN(nn.Module):
                                  spatial_channels=16, num_nodes=num_nodes)
         self.block2 = STGCNBlock(in_channels=64, out_channels=64,
                                  spatial_channels=16, num_nodes=num_nodes)
-        self.last_temporal = TimeBlock(in_channels=64, out_channels=64, kernel_size=1)
-        self.fully = nn.Linear(64,
-                               num_timesteps_output)
+        self.block3 = STGCNBlock(in_channels=64, out_channels=64,
+                                 spatial_channels=16, num_nodes=num_nodes)
+        self.last_temporal = TimeBlock(in_channels=64, out_channels=num_features, kernel_size=1)
+        self.last_conv = nn.Conv2d(in_channels=num_features, out_channels=num_features, 
+                                   kernel_size=(1, 1))
+#         self.fully = nn.Linear(64,
+#                                num_timesteps_output)
 
     def forward(self, A_hat, X):
         """
@@ -123,7 +130,14 @@ class STGCN(nn.Module):
         """
         out1 = self.block1(X, A_hat)
         out2 = self.block2(out1, A_hat)
-        out3 = self.last_temporal(out2)
-#         out4 = self.fully(out3.reshape((out3.shape[0], out3.shape[1], -1)))
-        out4 = self.fully(out3)
-        return out4
+        
+        out3 = self.block3(out2, A_hat)
+        
+        out4 = self.last_temporal(out3)
+        
+        out5 = self.last_conv(out4)
+#         out3_reshaped = out3.reshape((out3.shape[0], out3.shape[1], -1))
+#         print("Out3 reshaped: ", out3_reshaped.shape)
+#         out4 = self.fully(out3_reshaped)
+#         out4 = self.fully(out3)
+        return out5

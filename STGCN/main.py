@@ -1,15 +1,14 @@
 import torch
-from dataset import Dataset
 import matplotlib.pyplot as plt
 import numpy as np
 from os.path import join as pjoin
 import pandas as pd
 import torch.nn as nn
-from torch.utils.data import Subset
 
+from dataset import Dataset
 from stgcn import STGCN
 from data_loader.data_utils import data_gen
-from utils import get_normalized_adj
+from utils import get_normalized_adj, get_origin_destination_matrix
 from utils.math_graph import weight_matrix
 
 num_timesteps_input = 12
@@ -40,6 +39,8 @@ def train_epoch(training_generator, batch_size):
         local_batch, local_labels = local_batch.to(device, dtype=torch.float), local_labels.to(device, dtype=torch.float)
 
         out = net(A_wave, local_batch)
+#         print("out shape: ", out.shape)
+#         print("local_batch shape: ", local_labels.shape)
         loss = loss_criterion(out, local_labels)
         loss.backward()
         optimizer.step()
@@ -59,21 +60,18 @@ if __name__ == '__main__':
             'shuffle': False,
             'num_workers': 2}
     max_epochs = 100
+
+    # Loading the temporal orgin destination matrix
+    df = pd.read_csv("data/df_grouped_tile1000freq30min.csv")
+    OD_matrix = get_origin_destination_matrix(df)
     n = 228
-    n_his = 9
-    n_pred = 12
 
-    # Loading weight matrix
-    W = weight_matrix(pjoin('./data', f'W_{n}.csv'))
 
-    # A_wave = get_normalized_adj(W)
-    # A_wave = torch.from_numpy(A_wave)
-    A_wave = torch.from_numpy(W)
-    A_wave = A_wave.to(device=device, dtype=torch.float)
+    n_train, n_val, n_test = 0.7, 0.2, 0.1
+    n_his, n_pred = 9, 3
+    day_slot = 24*2     # Number of slots for each day
 
-    data_file = f'V_{n}.csv'
-    n_train, n_val, n_test = 34, 5, 5
-    X = data_gen(pjoin('./data', data_file), (n_train, n_val, n_test), n, n_his + n_pred)
+    X = data_gen(OD_matrix, (n_train, n_val, n_test), OD_matrix.shape[1], n_his + n_pred, day_slot)
 
     train_dataset = Dataset(np.transpose(X['train'], (0, 2, 1, 3)), n_his)
     val_dataset = Dataset(np.transpose(X['val'], (0, 2, 1, 3)), n_his)
@@ -82,6 +80,11 @@ if __name__ == '__main__':
     training_generator = torch.utils.data.DataLoader(train_dataset, **params)
     validation_generator = torch.utils.data.DataLoader(val_dataset, **params)
 
+    # Loading weight matrix
+    A_wave = OD_matrix.sum(axis=0)
+    A_wave = get_normalized_adj(A_wave)
+    A_wave = torch.from_numpy(A_wave)
+    A_wave = A_wave.to(device=device, dtype=torch.float)
 
     net = STGCN(A_wave.shape[0],
                 train_dataset.shape()[3],
