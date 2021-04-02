@@ -83,3 +83,5 @@ def get_origin_destination_matrix(df):
             time.add(el.starttime)
             t += 1
         origin_dest[t, el.tile_ID_origin, el.tile_ID_destination] += el.flow
+    
+    return origin_dest
