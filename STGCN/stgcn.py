@@ -3,14 +3,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
 class TimeBlock(nn.Module):
     """
     Neural network block that applies a temporal convolution to each node of
     a graph in isolation.
     """
 
-    def __init__(self, in_channels, out_channels, kernel_size=2):
+    def __init__(self, in_channels, out_channels, kernel_size=3):
         """
         :param in_channels: Number of input features at each node in each time
         step.
@@ -42,6 +41,7 @@ class TimeBlock(nn.Module):
         return out
         
 
+        
 class STGCNBlock(nn.Module):
     """
     Neural network block that applies a temporal convolution on each node in
@@ -114,12 +114,12 @@ class STGCN(nn.Module):
                                  spatial_channels=16, num_nodes=num_nodes)
         self.block2 = STGCNBlock(in_channels=64, out_channels=64,
                                  spatial_channels=16, num_nodes=num_nodes)
-        self.block3 = STGCNBlock(in_channels=64, out_channels=64,
-                                 spatial_channels=16, num_nodes=num_nodes)
-        self.last_temporal = TimeBlock(in_channels=64, out_channels=num_features, kernel_size=1)
+#         self.block3 = STGCNBlock(in_channels=64, out_channels=64,
+#                                  spatial_channels=16, num_nodes=num_nodes)
+        self.last_temporal = TimeBlock(in_channels=64, out_channels=num_features, kernel_size=3)
         self.last_conv = nn.Conv2d(in_channels=num_features, out_channels=num_features, 
                                    kernel_size=(1, 1))
-#         self.fully = nn.Linear(64,
+#         self.fully = nn.Linear(num_features,
 #                                num_timesteps_output)
 
     def forward(self, A_hat, X):
@@ -129,15 +129,21 @@ class STGCN(nn.Module):
         :param A_hat: Normalized adjacency matrix.
         """
         out1 = self.block1(X, A_hat)
+#         print("Shape out1", out1.shape)
         out2 = self.block2(out1, A_hat)
+#         print("Shape out2", out2.shape)
         
-        out3 = self.block3(out2, A_hat)
+#         out3 = self.block3(out2, A_hat)
+#         print("Shape out3", out3.shape)
         
-        out4 = self.last_temporal(out3)
+        out3 = self.last_temporal(out2)
         
-        out5 = self.last_conv(out4)
+        out4 = self.last_conv(out3)
+
 #         out3_reshaped = out3.reshape((out3.shape[0], out3.shape[1], -1))
 #         print("Out3 reshaped: ", out3_reshaped.shape)
 #         out4 = self.fully(out3_reshaped)
-#         out4 = self.fully(out3)
-        return out5
+
+#         out6 = self.fully(out5)
+#         print("Shape out6: ", out6.shape)
+        return out4
