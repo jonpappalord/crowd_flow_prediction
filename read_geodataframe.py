@@ -135,9 +135,19 @@ DATAPATH = Config().DATAPATH
 filename_df = "MANHATTAN_SIZE"+str(tile_size)+"_TIME_"+sample_time+"_df.h5"
 
 
-time_string = [str(int(str(time_sample).replace("-", "").replace(" ","").replace(":", "")[:10])+1).encode('utf-8') for time_sample in timestamps]
+# time_string = [str(int(str(time_sample).replace("-", "").replace(" ","").replace(":", "")[:10])+1).encode('utf-8') for time_sample in timestamps]
+time_string = [str(int(str(time_sample).replace("-", "").replace(" ","").replace(":", "")[:8])).encode('utf-8') for time_sample in timestamps]
+
 time_string.sort()
 
-
+date_set = set(time_string[0])
+hour = 1
+for i, date in enumerate(time_string):
+    if date not in date_set:
+        hour = 1
+        date_set.add(date)
+    time_string[i] += str(hour).encode('utf-8') if hour > 9 else (str(0)+str(hour)).encode('utf-8')
+    hour += 1
+    
 save_stdata(os.path.join(DATAPATH, 'BikeNYC',filename_df), X, time_string)
 print("Saved!")
