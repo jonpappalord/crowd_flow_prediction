@@ -14,6 +14,9 @@ from skmob.tessellation import tilers
 from operator import itemgetter
 import skmob
 
+def rmse_std(predictions, targets):
+    return np.std(np.sqrt(((predictions - targets) ** 2)))
+
 def raw_training(tile_size, sample_time, nb_epoch, exp, time_steps, batch_size, lr, lr_decay, opt, past_time=11):
 
     df = pd.read_csv("data/df_grouped_tile"+str(tile_size)+"freq"+sample_time+".csv")
@@ -141,7 +144,6 @@ def raw_training(tile_size, sample_time, nb_epoch, exp, time_steps, batch_size, 
         loss = train_epoch(training_generator,
                         batch_size=batch_size)
         training_losses.append(loss)
-        print('[Epoch %4d/%4d] Loss: % 2.2e' % (epoch + 1, nb_epoch, loss))
 
         # Run validation
         with torch.set_grad_enabled(False):
@@ -166,6 +168,7 @@ def raw_training(tile_size, sample_time, nb_epoch, exp, time_steps, batch_size, 
             local_labels = local_labels.to(device="cpu")
         
         my_lr_scheduler.step()
+        print('[Epoch %4d/%4d] Loss: % 2.2e Val Loss: % 2.2e' % (epoch + 1, nb_epoch, loss, np.mean(local_val)))
 
     print("Training loss: {}".format(training_losses[-1]))
     print("Validation loss: {}".format(validation_losses[-1]))
@@ -388,61 +391,99 @@ def raw_training(tile_size, sample_time, nb_epoch, exp, time_steps, batch_size, 
 
 
     flow = 0
-    f = plt.figure(figsize=(18,8))
+    f = plt.figure(figsize=(15,15))
     ax = f.add_subplot(1,1,1)
     plt.ylabel('latitude',fontsize=20)
     plt.xlabel('longitude',fontsize=20)
     plt.yticks(fontsize=14)
-    plt.title("Predicted outflow heatmap bike NYC dataset", fontsize=22)
+    plt.xticks(fontsize=14)
+    # plt.title("Real outflow heatmap bike NYC dataset", fontsize=22)
     heatmap = A[0, :, :, flow].copy()
     for img in A[1:]:
         heatmap += img[:, :, flow]
     plt.imshow(heatmap.T, cmap='Reds', interpolation='nearest')
     plt.colorbar()
-    plt.savefig("actual_heatmap_outflow.png")
+    plt.savefig("heatmap_tile"+str(tile_size)+"time_interval"+sample_time+"_outflow_real.png")
 
     flow = 1
-    f = plt.figure(figsize=(18,8))
+    f = plt.figure(figsize=(15,15))
     ax = f.add_subplot(1,1,1)
     plt.ylabel('latitude',fontsize=20)
     plt.xlabel('longitude',fontsize=20)
     plt.yticks(fontsize=14)
-    plt.title("Predicted inflow heatmap bike NYC dataset", fontsize=22)
+    plt.xticks(fontsize=14)
+    # plt.title("Real inflow heatmap bike NYC dataset", fontsize=22)
     heatmap = A[0, :, :, flow].copy()
     for img in A[1:]:
         heatmap += img[:, :, flow]
     plt.imshow(heatmap.T, cmap='Reds', interpolation='nearest')
     plt.colorbar()
-    plt.savefig("actual_heatmap_inflow.png")
+    plt.savefig("heatmap_tile"+str(tile_size)+"time_interval"+sample_time+"_inflow_real.png")
 
 
     flow = 0
-    f = plt.figure(figsize=(18,8))
+    f = plt.figure(figsize=(15,15))
     ax = f.add_subplot(1,1,1)
     plt.ylabel('latitude',fontsize=20)
     plt.xlabel('longitude',fontsize=20)
     plt.yticks(fontsize=14)
-    plt.title("Predicted outflow heatmap bike NYC dataset", fontsize=22)
+    plt.xticks(fontsize=14)
+    # plt.title("Predicted outflow heatmap bike NYC dataset", fontsize=22)
     heatmap = P[0, :, :, flow].copy()
     for img in P[1:]:
         heatmap += img[:, :, flow]
     plt.imshow(heatmap.T, cmap='Reds', interpolation='nearest')
     plt.colorbar()
-    plt.savefig("predicted_heatmap_outflow.png")
+    plt.savefig("heatmap_tile"+str(tile_size)+"time_interval"+sample_time+"_outflow_predicted.png")
 
     flow = 1
-    f = plt.figure(figsize=(18,8))
+    f = plt.figure(figsize=(15,15))
     ax = f.add_subplot(1,1,1)
     plt.ylabel('latitude',fontsize=20)
     plt.xlabel('longitude',fontsize=20)
     plt.yticks(fontsize=14)
-    plt.title("Predicted inflow heatmap bike NYC dataset", fontsize=22)
+    plt.xticks(fontsize=14)
+    # plt.title("Predicted inflow heatmap bike NYC dataset", fontsize=22)
     heatmap = P[0, :, :, flow].copy()
     for img in P[1:]:
         heatmap += img[:, :, flow]
     plt.imshow(heatmap.T, cmap='Reds', interpolation='nearest')
     plt.colorbar()
-    plt.savefig("predicted_heatmap_inflow.png")
+    plt.savefig("heatmap_tile"+str(tile_size)+"time_interval"+sample_time+"_inflow_predicted.png")
+
+    quantile = 10
+    start_date = 0
+    n_days = P.shape[0]//day_slot
+
+    start_date *=day_slot
+    n_days *= day_slot
+    end_date = start_date+n_days
+    
+    A = np.array([A[i:i+day_slot].mean(axis=0) for i in range(start_date, end_date, day_slot)]).flatten()
+    P = np.array([P[i:i+day_slot].mean(axis=0) for i in range(start_date, end_date, day_slot)]).flatten()
+    
+    # Permuting A and applying the same permutation to the prediction
+    p = A.argsort()
+    A = A[p]
+    P = P[p]
+
+    decili = [d for d in np.array_split(A, quantile)]
+    decili_pred = [d for d in np.array_split(P, quantile)]
+
+    rmse_decili = np.array([(mean_squared_error(mmn.transform(decili[i]), mmn.transform(decili_pred[i]), squared=False),
+               mean_squared_error(mmn.transform(decili[i]), mmn.transform(decili_pred[i])))
+               for i in range(quantile)])
+
+    plt.figure(figsize=(16,9))
+    plt.errorbar(list(range(quantile)), rmse_decili[:,0], rmse_decili[:,1])
+    plt.xlabel("Decile cell flow", fontsize=22)
+    plt.ylabel("NRMSE", fontsize=22)
+    plt.xticks(list(range(10)), list(range(1, 11)), fontsize=18)
+    plt.yticks(fontsize=18)
+    for line in plt.gca().lines:
+        line.set_linewidth(4.)
+    plt.grid()
+    plt.savefig("decile_tile"+str(tile_size)+"time_interval"+sample_time+".png")
 
 
     params = {
@@ -485,10 +526,11 @@ def raw_training(tile_size, sample_time, nb_epoch, exp, time_steps, batch_size, 
     # fig_name = "ts"+str(params['tile_size'])+"_f"+str(params['sample_time'])
     
 
-    mlflow.log_artifact("predicted_heatmap_inflow.png")
-    mlflow.log_artifact("actual_heatmap_inflow.png")
-    mlflow.log_artifact("predicted_heatmap_outflow.png")
-    mlflow.log_artifact("actual_heatmap_outflow.png")
+    mlflow.log_artifact("heatmap_tile"+str(tile_size)+"time_interval"+sample_time+"_inflow_predicted.png")
+    mlflow.log_artifact("heatmap_tile"+str(tile_size)+"time_interval"+sample_time+"_outflow_predicted.png")
+    mlflow.log_artifact("heatmap_tile"+str(tile_size)+"time_interval"+sample_time+"_inflow_real.png")
+    mlflow.log_artifact("heatmap_tile"+str(tile_size)+"time_interval"+sample_time+"_outflow_real.png")
+    mlflow.log_artifact("decile_tile"+str(tile_size)+"time_interval"+sample_time+".png")
     mlflow.log_artifact("scatter_plot.png")
 
     # Ending MLFlow run

@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class TimeBlock(nn.Module):
     """
     Neural network block that applies a temporal convolution to each node of
@@ -41,7 +42,6 @@ class TimeBlock(nn.Module):
         return out
         
 
-        
 class STGCNBlock(nn.Module):
     """
     Neural network block that applies a temporal convolution on each node in
@@ -136,9 +136,9 @@ class STGCN(nn.Module):
 #         out3 = self.block3(out2, A_hat)
 #         print("Shape out3", out3.shape)
         
-        out3 = self.last_temporal(out2)
+        out4 = self.last_temporal(out2)
         
-        out4 = self.last_conv(out3)
+        out5 = self.last_conv(out4)
 
 #         out3_reshaped = out3.reshape((out3.shape[0], out3.shape[1], -1))
 #         print("Out3 reshaped: ", out3_reshaped.shape)
@@ -146,4 +146,4 @@ class STGCN(nn.Module):
 
 #         out6 = self.fully(out5)
 #         print("Shape out6: ", out6.shape)
-        return out4
+        return out5

@@ -11,7 +11,7 @@ if __name__ == '__main__':
     sample_time = "60min"
     time_steps = 60/float(sample_time.split("min")[0])
     tile_size = 1000
-    nb_epoch = 200  # number of epoch at training stage
+    nb_epoch = 150  # number of epoch at training stage
 
     batch_size = 16
     lr = 1e-4
@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     past_time = 11
 
-    raw_training(tile_size, sample_time, nb_epoch, exp, time_steps, batch_size, lr, lr_decay, opt, past_time)
+    # raw_training(tile_size, sample_time, nb_epoch, exp, time_steps, batch_size, lr, lr_decay, opt, past_time)
     
     ##### GRID SEARCH
     # for batch_size in [16, 32, 50, 64]:
@@ -28,7 +28,8 @@ if __name__ == '__main__':
     #         for opt in ["Adam", "RMSprop"]:
     #             for lr_decay in [0.96, 0.5]:
 
-    for tile_size in [1000, 1500]:
-        for sample_time in ["15min", "30min", "60min", "120min"]:
+    for tile_size in [1500, 1000]:
+        # for sample_time in ["30min", "60min", "120min", "15min"]:
+        for sample_time in ["30min", "60min"]:
             time_steps = 60/float(sample_time.split("min")[0])
             raw_training(tile_size, sample_time, nb_epoch, exp, time_steps, batch_size, lr, lr_decay, opt, past_time)
