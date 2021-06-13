@@ -1,17 +1,32 @@
-
+# from main import raw_training
+from src.AdjNet.trainModel import train_and_evaluate
+from read_geodataframe import load_dataset
 import mlflow
 
-from models.deepst.BikeNYC.trainModel import train_and_evaluate
-
 experiment_name = " ".join(["bike","NN"])\
-
+    
 if __name__ == '__main__':
     # Setting MLFlow
     mlflow.set_experiment(experiment_name = experiment_name)
     exp = mlflow.get_experiment_by_name(experiment_name)
 
     sample_time = "60min"
-    tile_size = 1500
-    nb_epoch = 500  # number of epoch at training stage
+    tile_size = 1000
+
+    load_dataset(tile_size, sample_time)
+
+    time_steps = 60/float(sample_time.split("min")[0])
+    nb_epoch = 1  # number of epoch at training stage
+
+    batch_size = 16
+    lr = 1e-4
+    lr_decay = 0.96
+    opt = "RMSprop"
+
+    past_time = 11
     
-    train_and_evaluate(tile_size, sample_time, nb_epoch, exp)
+
+    # for tile_size in [1000, 1500]:
+    #     for sample_time in ["15min", "30min", "45min", "60min"]:
+    #         time_steps = 60/float(sample_time.split("min")[0])
+    train_and_evaluate(tile_size, sample_time, nb_epoch, exp, time_steps, batch_size, lr, lr_decay, opt, past_time)
