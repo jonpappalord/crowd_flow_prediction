@@ -88,7 +88,7 @@ def load_dataset(tile_size=1000, sample_time='60min'):
     matrix_mapping = {el[0]:el[1] for el in zip(tessellation['tile_ID'], tessellation['positions'])}
 
     # Saving geodataframe
-    gdf_grouped.to_csv(Config().DATAPATH+"/BikeNYC/df_grouped_tile"+str(tile_size)+".csv")
+    gdf_grouped.to_csv(Config().DATAPATH+"/BikeNYC/df_grouped_tile"+str(tile_size)+"freq"+sample_time+".csv")
 
 
     ## Creating the matrix map to test the STResNet

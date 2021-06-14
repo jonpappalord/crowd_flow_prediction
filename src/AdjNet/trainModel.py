@@ -46,7 +46,8 @@ def train_and_evaluate(tile_size, sample_time, nb_epoch, exp, time_steps, batch_
     net = STGCN(A_wave.shape[0],
                 train_dataset.shape()[3],
                 n_his,
-                n_pred).to(device=torch.device('cuda'), dtype=torch.float)
+                n_pred).to(device=torch.device(device), dtype=torch.float)
+                
     if opt == "Adam":
         optimizer = torch.optim.Adam(net.parameters(), lr=lr)
     elif opt == "RMSprop":
@@ -148,9 +149,7 @@ def train_and_evaluate(tile_size, sample_time, nb_epoch, exp, time_steps, batch_
     pred_test = np.concatenate(pred_test, axis=0)
     act_test = np.concatenate(act_test, axis=0)
 
-    print("Test dataset shape ", test_dataset.get_data()[:,:,11].shape, "ActTest shape ", act_test.shape)
-    print("Is test dataset = act_test? ", (test_dataset.get_data()[:,:,11] == act_test[:,:,0]).all())
-
+    
     # Evalute the model on training set for crowd flow prediction problem
     pred_train, act_train = [], []
     for local_batch, local_labels in training_generator:
@@ -242,6 +241,12 @@ def train_and_evaluate(tile_size, sample_time, nb_epoch, exp, time_steps, batch_
         "test corr" : corr_test[0][1]
         }
 
+    print("RMSE Error train: ", rmse_train)
+    print("RMSE Error test: ", rmse_test)
+    print("NRMSE Error train: ", nrmse_train)
+    print("NRMSE Error test: ", nrmse_test)
+    print("Corr test: ", corr_test[0][1])
+
     # Starting MLFlow run
     mlflow.start_run(run_name=str(params), experiment_id=exp.experiment_id)
     
@@ -264,13 +269,13 @@ def train_and_evaluate(tile_size, sample_time, nb_epoch, exp, time_steps, batch_
     # fig_name = "ts"+str(params['tile_size'])+"_f"+str(params['sample_time'])
     
 
-    mlflow.log_artifact("heatmap_tile"+str(tile_size)+"time_interval"+sample_time+"_inflow_predicted.png")
-    mlflow.log_artifact("heatmap_tile"+str(tile_size)+"time_interval"+sample_time+"_outflow_predicted.png")
-    mlflow.log_artifact("heatmap_tile"+str(tile_size)+"time_interval"+sample_time+"_inflow_real.png")
-    mlflow.log_artifact("heatmap_tile"+str(tile_size)+"time_interval"+sample_time+"_outflow_real.png")
-    mlflow.log_artifact("decile_tile"+str(tile_size)+"time_interval"+sample_time+".png")
-    mlflow.log_artifact("scatter_plot_tile"+str(tile_size)+"time_interval"+sample_time+".png")
-    mlflow.log_artifact("decile_tile"+str(tile_size)+"time_interval"+sample_time+".csv")
+    # mlflow.log_artifact("heatmap_tile"+str(tile_size)+"time_interval"+sample_time+"_inflow_predicted.png")
+    # mlflow.log_artifact("heatmap_tile"+str(tile_size)+"time_interval"+sample_time+"_outflow_predicted.png")
+    # mlflow.log_artifact("heatmap_tile"+str(tile_size)+"time_interval"+sample_time+"_inflow_real.png")
+    # mlflow.log_artifact("heatmap_tile"+str(tile_size)+"time_interval"+sample_time+"_outflow_real.png")
+    # mlflow.log_artifact("decile_tile"+str(tile_size)+"time_interval"+sample_time+".png")
+    # mlflow.log_artifact("scatter_plot_tile"+str(tile_size)+"time_interval"+sample_time+".png")
+    # mlflow.log_artifact("decile_tile"+str(tile_size)+"time_interval"+sample_time+".csv")
 
     # Ending MLFlow run
     mlflow.end_run()
