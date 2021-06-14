@@ -1,6 +1,6 @@
-## Crowd Flow prediction - ST-ResNet in Tensorflow
+## Crowd Flow prediction - AdjNet in Pytorch
 
-An implementation of the Deep Spatio-Temporal Residual Network (ST-ResNet) from the paper ["Deep Spatio-Temporal Residual Networks for Citywide Crowd Flows Prediction"](https://arxiv.org/abs/1610.00081).
+An implementation of the Adjacency Matrix Neural Network (AdjNet) used to solve flow prediction problem.
 
 
 # Install
