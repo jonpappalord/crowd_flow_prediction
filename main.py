@@ -15,8 +15,8 @@ if __name__ == '__main__':
     sample_time = "60min"
     tile_size = 1000
 
-    if not os.path.exists(Config().DATAPATH+"/BikeNYC/df_grouped_tile"+str(tile_size)+"freq"+sample_time+".csv"): 
-        load_dataset(tile_size, sample_time)
+    # if not os.path.exists(Config().DATAPATH+"/BikeNYC/df_grouped_tile"+str(tile_size)+"freq"+sample_time+".csv"): 
+    load_dataset(tile_size, sample_time)
 
     time_steps = 60/float(sample_time.split("min")[0])
     nb_epoch = 150  # number of epoch at training stage
