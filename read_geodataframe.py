@@ -5,6 +5,7 @@ import numpy as np
 import os
 from operator import itemgetter
 import pandas as pd
+import requests
 import skmob
 from shapely.geometry import Point
 from skmob.tessellation import tilers
@@ -12,27 +13,37 @@ import time
 from src.AdjNet.utils.config import Config
 from zipfile import ZipFile
 
-dataset_file = "data/BikeNYC/BikeNYC.zip"
+# dataset_file = "data/BikeNYC/BikeNYC.zip"
+dataset_directory = "data/BikeNYC/"
 
 
 tile_size = 1000
 sample_time = '60min'
 
 def load_dataset(tile_size=1000, sample_time='60min'):
+    for month in [4, 5, 6, 7, 8, 9]:
+        if not os.path.isfile(dataset_directory+"20140"+str(month)+"-citibike-tripdata.zip"):
+            url = 'https://s3.amazonaws.com/tripdata/20140'+str(month)+'-citibike-tripdata.zip'
+            r = requests.get(url, allow_redirects=True)
+            open(dataset_directory+"20140"+str(month)+"-citibike-tripdata.zip", 'wb').write(r.content)
+            print("Downloaded month: ", month)
 
     print("Loading data...")
-    if dataset_file.endswith('.zip'):
-        with ZipFile(dataset_file) as zipfiles:
-            file_list = zipfiles.namelist()
+    zip_files = [f for f in os.listdir(dataset_directory) if f.endswith('.zip')]
+    data = [pd.read_csv(dataset_directory+file_name) for file_name in zip_files]
+    df = pd.concat(data)
+    # if dataset_file.endswith('.zip'):
+    #     with ZipFile(dataset_file) as zipfiles:
+    #         file_list = zipfiles.namelist()
             
-            #get only the csv files
-            csv_files = fnmatch.filter(file_list, "*.csv")
+    #         #get only the csv files
+    #         csv_files = fnmatch.filter(file_list, "*.csv")
             
-            #iterate with a list comprehension to get the individual dataframes
-            data = [pd.read_csv(zipfiles.open(file_name)) for file_name in csv_files]
-            df = pd.concat(data)
-    else:
-        df = pd.read_csv(dataset_file, sep=',')
+    #         #iterate with a list comprehension to get the individual dataframes
+    #         data = [pd.read_csv(zipfiles.open(file_name)) for file_name in csv_files]
+    #         df = pd.concat(data)
+    # else:
+    #     df = pd.read_csv(dataset_file, sep=',')
     print("Data loaded...")
     print("Preprocessing")
 
@@ -89,72 +100,3 @@ def load_dataset(tile_size=1000, sample_time='60min'):
 
     # Saving geodataframe
     gdf_grouped.to_csv(Config().DATAPATH+"/BikeNYC/df_grouped_tile"+str(tile_size)+"freq"+sample_time+".csv")
-
-
-    ## Creating the matrix map to test the STResNet
-
-    # def f(row, matrix_mapping, X_dataset, timestamps):
-    #     (t, o, d), f = row.name, row.flow       # time, origin, destination, flow
-    #     if t not in timestamps:
-    #         timestamps.add(t)
-    #     time_idx = len(timestamps)-1
-    #     # print(time_idx, f)
-    #     x_out, y_out = matrix_mapping[str(o)]
-    #     x_in, y_in = matrix_mapping[str(d)]
-
-    #     X_dataset[time_idx][x_in][y_in][0] += f     # Inflow
-    #     X_dataset[time_idx][x_out][y_out][1] += f   # Outflow
-
-    # flows = 2
-    # n_timestamps = gdf.groupby([pd.Grouper(key='starttime', freq=sample_time)]).ngroups # It can be done also by counting the days*24 
-    # matrix_shape = (n_timestamps, max_x+1, max_y+1, flows)
-    # X_dataset = np.zeros(matrix_shape)
-    # timestamps = set()
-
-    # gdf_grouped.apply(lambda row: f(row, matrix_mapping, X_dataset, timestamps), axis=1)
-
-    # def remove_empty_rows(X_dataset, flows):
-    #     X_new = []
-    #     X_sum = []
-    #     for i in range(flows):
-    #         X_new.append(X_dataset[:,:,:,i])
-    #         X_sum.append(np.add.reduce(X_new[i]))
-
-    #         X_new[i] = X_new[i][:,~(X_sum[i]==0).all(1)]    # Removing empty rows
-    #         X_new[i] = X_new[i][:,:,~(X_sum[i].T==0).all(1)]    # Removing empty columns
-
-    #     X_dataset = np.empty([X_dataset.shape[0], X_new[0].shape[1], X_new[0].shape[2], flows])
-
-    #     for i in range(flows):
-    #         X_dataset[:,:,:,i] = X_new[i]
-
-    #     return X_dataset
-
-    # X = remove_empty_rows(X_dataset, 2)
-
-    # gdf.groupby([pd.Grouper(key='starttime', freq=sample_time)]).sum()
-
-
-    # from utils.config import Config
-    # from utils.load_datasets import save_stdata
-    # DATAPATH = Config().DATAPATH
-
-    # filename_df = "MANHATTAN_SIZE"+str(tile_size)+"_TIME_"+sample_time+"_df.h5"
-
-
-    # # time_string = [str(int(str(time_sample).replace("-", "").replace(" ","").replace(":", "")[:10])+1).encode('utf-8') for time_sample in timestamps]
-    # time_string = [str(int(str(time_sample).replace("-", "").replace(" ","").replace(":", "")[:8])).encode('utf-8') for time_sample in timestamps]
-
-    # time_string.sort()
-
-    # date_set = set(time_string[0])
-    # hour = 1
-    # for i, date in enumerate(time_string):
-    #     if date not in date_set:
-    #         hour = 1
-    #         date_set.add(date)
-    #     time_string[i] += str(hour).encode('utf-8') if hour > 9 else (str(0)+str(hour)).encode('utf-8')
-    #     hour += 1
-        
-    # save_stdata(os.path.join(DATAPATH, 'BikeNYC',filename_df), X, time_string)
-    # print("Saved!")
