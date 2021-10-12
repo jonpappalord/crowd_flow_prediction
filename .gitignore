@@ -7,8 +7,9 @@
 *.gz
 bak/
 backup/
+# src/notebooks/
 *.txt
-*.csv
+# *.csv
 *.png
 
 # Byte-compiled / optimized / DLL files

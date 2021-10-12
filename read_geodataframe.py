@@ -1,3 +1,4 @@
+import ast
 import fnmatch
 import geopandas as gpd
 import matplotlib.pyplot as plt
@@ -8,6 +9,7 @@ import pandas as pd
 import requests
 import skmob
 from shapely.geometry import Point
+import shapely.wkt
 from skmob.tessellation import tilers
 import time
 from src.AdjNet.utils.config import Config
@@ -48,13 +50,22 @@ def load_dataset(tile_size=1000, sample_time='60min'):
     print("Preprocessing")
 
 
-    tessellation = tilers.tiler.get("squared", base_shape="Manhattan, New York City, USA", meters=tile_size)
+    # tessellation = tilers.tiler.get("squared", base_shape="Manhattan, New York City, USA", meters=tile_size)
+    tessellation = pd.read_csv(Config().DATAPATH+"/Tessellation_"+str(tile_size)+"m.csv")
+    tessellation['geometry'] = [shapely.wkt.loads(el) for el in tessellation.geometry]
+    tessellation = gpd.GeoDataFrame(tessellation, geometry='geometry')
+
+    print("Tessellato")
 
     # tessellation['position'] contains che position in a matrix
     # The origin is located on the bottom left corner
     # We need to locate it on the top left corner
-    list_positions = [np.array(el) for el in tessellation['position']]
-    list_positions = np.array(sorted(list_positions,key=itemgetter(1)))
+
+    # list_positions = [np.array(el) for el in tessellation['position']]
+    # list_positions = np.array(sorted(list_positions,key=itemgetter(1)))
+    list_positions = [np.array(ast.literal_eval(el)) for el in tessellation['position']]
+    list_positions = np.array(sorted(np.array(list_positions),key=itemgetter(1)))
+
     max_x = list_positions[:, 0].max()
     max_y = list_positions[:, 1].max()
 
@@ -67,7 +78,6 @@ def load_dataset(tile_size=1000, sample_time='60min'):
         list_positions[i, 1] = new_value
         
     tessellation['positions'] = list(sorted(list_positions, key=itemgetter(0)))
-    skmob.utils.plot.plot_gdf(tessellation, popup_features=['tile_ID', 'positions'])
 
 
     ## Filtering the dataset using the relevant features

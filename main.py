@@ -15,8 +15,8 @@ if __name__ == '__main__':
     sample_time = "60min"
     tile_size = 1000
 
-    # if not os.path.exists(Config().DATAPATH+"/BikeNYC/df_grouped_tile"+str(tile_size)+"freq"+sample_time+".csv"): 
-    load_dataset(tile_size, sample_time)
+    if not os.path.exists(Config().DATAPATH+"/BikeNYC/df_grouped_tile"+str(tile_size)+"freq"+sample_time+".csv"): 
+        load_dataset(tile_size, sample_time)
 
     time_steps = 60/float(sample_time.split("min")[0])
     nb_epoch = 150  # number of epoch at training stage
@@ -29,7 +29,7 @@ if __name__ == '__main__':
     past_time = 11
     
 
-    # for tile_size in [1000, 1500]:
-    #     for sample_time in ["15min", "30min", "45min", "60min"]:
-    #         time_steps = 60/float(sample_time.split("min")[0])
-    train_and_evaluate(tile_size, sample_time, nb_epoch, exp, time_steps, batch_size, lr, lr_decay, opt, past_time)
+    for tile_size in [750]:
+        for sample_time in ["30min", "45min", "60min"]:
+            time_steps = 60/float(sample_time.split("min")[0])
+            train_and_evaluate(tile_size, sample_time, nb_epoch, exp, time_steps, batch_size, lr, lr_decay, opt, past_time)

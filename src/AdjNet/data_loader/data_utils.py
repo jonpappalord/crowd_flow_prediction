@@ -1,5 +1,8 @@
 import numpy as np
+import ast
+import geopandas as gpd
 import pandas as pd
+import shapely.wkt
 from operator import itemgetter
 import skmob
 from skmob.tessellation import tilers
@@ -107,10 +110,16 @@ def split_and_scale(X, time_steps, n_his, n_pred):
 
 
 def get_matrix_mapping(tile_size):
-    tessellation = tilers.tiler.get("squared", base_shape="Manhattan, New York City, USA", meters=tile_size)
+    # tessellation = tilers.tiler.get("squared", base_shape="Manhattan, New York City, USA", meters=tile_size)
+    tessellation = pd.read_csv(Config().DATAPATH+"/Tessellation_"+str(tile_size)+"m.csv")
+    tessellation['geometry'] = [shapely.wkt.loads(el) for el in tessellation.geometry]
+    tessellation = gpd.GeoDataFrame(tessellation, geometry='geometry')
 
-    list_positions = [np.array(el) for el in tessellation['position']]
-    list_positions = np.array(sorted(list_positions,key=itemgetter(1)))
+    # list_positions = [np.array(el) for el in tessellation['position']]
+    # list_positions = np.array(sorted(list_positions,key=itemgetter(1)))
+    list_positions = [np.array(ast.literal_eval(el)) for el in tessellation['position']]
+    list_positions = np.array(sorted(np.array(list_positions),key=itemgetter(1)))
+        
     max_x = list_positions[:, 0].max()
     max_y = list_positions[:, 1].max()
 
@@ -123,7 +132,7 @@ def get_matrix_mapping(tile_size):
         list_positions[i, 1] = new_value
         
     tessellation['positions'] = list(sorted(list_positions, key=itemgetter(0)))
-    skmob.utils.plot.plot_gdf(tessellation, popup_features=['tile_ID', 'positions'])
+    # skmob.utils.plot.plot_gdf(tessellation, popup_features=['tile_ID', 'positions'])
 
 
     matrix_mapping = {el[0]:el[1] for el in zip(tessellation['tile_ID'], tessellation['positions'])}
@@ -144,9 +153,9 @@ def OD_matrix_to_map(OD_matrix, mapping, offset, map_shape):
     map_matrix = np.zeros(map_shape)
     for i in range(OD_matrix.shape[1]): # origin
         for j in range(OD_matrix.shape[3]): # destination
-            x, y = mapping[str(j+offset)]
+            x, y = mapping[(j+offset)]
             map_matrix[:, x, y, 0, :] += OD_matrix[:, i, :, j]#.numpy() # Inflow
-            x, y = mapping[str(i+offset)]
+            x, y = mapping[(i+offset)]
             map_matrix[:, x, y, 1, :] += OD_matrix[:, i, :, j]#.numpy() # Outflow
     return map_matrix
 

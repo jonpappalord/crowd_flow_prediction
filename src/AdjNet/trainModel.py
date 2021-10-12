@@ -8,6 +8,7 @@ from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import skmob
 from skmob.tessellation import tilers
+from src.AdjNet.utils.config import Config
 import torch
 import torch.nn as nn
 import sys
@@ -129,6 +130,8 @@ def train_and_evaluate(tile_size, sample_time, nb_epoch, exp, time_steps, batch_
     print("Training loss: {}".format(training_losses[-1]))
     print("Validation loss: {}".format(validation_losses[-1]))
     print("Validation MAE: {}".format(validation_maes[-1]))
+
+    torch.save(net, Config().DATAPATH+"/Models/AdjNet_"+str(tile_size)+"m_"+sample_time+"min.pt")
 
 
     ### TEST DATASET ###
