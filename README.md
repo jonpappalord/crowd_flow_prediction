@@ -1,12 +1,12 @@
 ## AdjNet: a deep learning approach for Crowd Flow Prediction
 
-Python impletement of the thesis ***AdjNet: a deep learning approach for Crowd Flow Prediction*** ([Link](https://etd.adm.unipi.it/t/etd-06092021-221917/))
+Python impletmentaion of the thesis ***AdjNet: a deep learning approach for Crowd Flow Prediction*** ([Link](https://etd.adm.unipi.it/t/etd-06092021-221917/))
 
 ### Introduction
 
-we propose AdjNet (Adjacency Matrix Neural Network), which solves the Crowd Flow Prediction problem using an approach based on Graph Convolutional Networks (GCN) and Convolutional Neural Networks (CNN). In the first stage, we first represent the area taken into account using different tessellations. In the second stage, we train our model using the New York City Bike Share dataset to predict flows among regions.
+We propose AdjNet (Adjacency Matrix Neural Network), which solves the Crowd Flow Prediction problem using an approach based on Graph Convolutional Networks (GCN) and Convolutional Neural Networks (CNN). In the first stage, we first represent the area taken into account using different tessellations. In the second stage, we train our model using the New York City Bike Share dataset to predict flows among regions.
 
-<img src = "https://github.com/jonpappalord/crowd_flow_prediction/blob/main/Figure/AdjNetArch.png?raw=1" style="width: 50%;"/>
+<img src = "https://github.com/jonpappalord/crowd_flow_prediction/blob/main/Figure/AdjNetArch.pdf?raw=1" style="width: 50%;"/>
 
 ### Result
 
@@ -14,17 +14,6 @@ We evaluate our model using different tessellation, evaluating them exploiting t
 
 **RMSE**
 
-<style type="text/css">
-.tg  {border-collapse:collapse;border-spacing:0;}
-.tg td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
-  overflow:hidden;padding:10px 5px;word-break:normal;}
-.tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
-  font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
-.tg .tg-gvcd{background-color:#ffffff;border-color:#000000;color:#000000;text-align:left;vertical-align:top}
-.tg .tg-v0nz{background-color:#ffffff;border-color:#000000;color:#000000;text-align:center;vertical-align:top}
-.tg .tg-8c31{background-color:#ffffff;border-color:#000000;color:#000000;text-align:left;vertical-align:middle}
-.tg .tg-anz3{background-color:#ffffff;border-color:#000000;color:#000000;text-align:center;vertical-align:middle}
-</style>
 <table class="tg">
 <thead>
   <tr>
