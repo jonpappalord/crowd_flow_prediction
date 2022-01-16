@@ -6,7 +6,7 @@ Python impletmentaion of the thesis ***AdjNet: a deep learning approach for Crow
 
 We propose AdjNet (Adjacency Matrix Neural Network), which solves the Crowd Flow Prediction problem using an approach based on Graph Convolutional Networks (GCN) and Convolutional Neural Networks (CNN). In the first stage, we first represent the area taken into account using different tessellations. In the second stage, we train our model using the New York City Bike Share dataset to predict flows among regions.
 
-<img src = "https://github.com/jonpappalord/crowd_flow_prediction/blob/main/Figure/AdjNetArch.png?raw=1" style="width: 50%;"/>
+<img src = "https://github.com/jonpappalord/crowd_flow_prediction/blob/main/Figure/AdjNetArch.png?raw=1" style="width: 75%;"/>
 
 ### Result
 
