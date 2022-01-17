@@ -10,7 +10,7 @@ We propose AdjNet (Adjacency Matrix Neural Network), which solves the Crowd Flow
 
 ### Result
 
-We evaluate our model using different tessellation, evaluating them exploiting the RMSE metric. We compare it using as baseline another Deep Learning approach named STResNet.
+We evaluate our model using different tessellation, evaluating them exploiting the RMSE metric. We compare it using as baseline another Deep Learning approach named STResNet ([Link](https://arxiv.org/abs/1610.00081)).
 
 **RMSE**
 
@@ -80,9 +80,9 @@ We evaluate our model using different tessellation, evaluating them exploiting t
 </tbody>
 </table>
 
+A visual comparison of the mean real crowd inflows and outflows with the mean crowd inflows and outflows predicted by STResNet and AdjNet is provided by the following image.
 
-
-<img src = "https://github.com/jonpappalord/crowd_flow_prediction/blob/main/Figure/Heatmap_Inflow_1000m_30min.png?raw=1" style="width: 50%;"/>
+<img src = "https://github.com/jonpappalord/crowd_flow_prediction/blob/main/Figure/Heatmap_Inflow_1000m_30min.png?raw=1" style="width: 75%;"/>
 
 ### Train
 
