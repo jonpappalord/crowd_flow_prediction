@@ -80,7 +80,7 @@ We evaluate our model using different tessellation, evaluating them exploiting t
 </tbody>
 </table>
 
-A visual comparison of the mean real crowd inflows and outflows with the mean crowd inflows and outflows predicted by STResNet and AdjNet is provided by the following image.
+A visual comparison of the mean real crowd inflows with the mean crowd inflows predicted by STResNet and AdjNet is provided by the following image.
 
 <img src = "https://github.com/jonpappalord/crowd_flow_prediction/blob/main/Figure/Heatmap_Inflow_1000m_30min.png?raw=1" style="width: 75%;"/>
 
