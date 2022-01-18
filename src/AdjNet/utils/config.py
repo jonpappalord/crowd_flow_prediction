@@ -18,3 +18,6 @@ class Config(object):
             else:
                 print("Unsupported/Unknown OS: ", platform.system, "please set DATAPATH")
         self.DATAPATH = DATAPATH
+
+    def set_datapath(self, datapath):
+        self.DATAPATH = datapath
