@@ -9,7 +9,8 @@ requirements = [
         'shapely',
         'scikit-mobility',
         'torch',
-        'torchvision',]
+        'torchvision',
+        'mlflow']
 
 setup(
     name="AdjNet",
