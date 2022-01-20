@@ -35,7 +35,7 @@ def seq_gen(len_seq, data_seq, offset, n_frame, n_route, day_slot, C_0=1):
 
 
 def load_dataset(tile_size, sample_time):
-    df = pd.read_csv(Config().DATAPATH+"/BikeNYC/df_grouped_tile"+str(tile_size)+"freq"+sample_time+".csv")
+    df = pd.read_csv(Config().DATAPATH+"/BikeNYC/df_grouped_tile"+str(tile_size)+"freq"+sample_time+".csv") # TODO Change datapath
     min_tile_id = df['tile_ID_origin'].min()
 
     df['tile_ID_origin'] -= df['tile_ID_origin'].min()
