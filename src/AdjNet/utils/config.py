@@ -2,7 +2,6 @@ from __future__ import print_function
 import os
 import platform
 
-
 class Config(object):
     """docstring for Config"""
 
@@ -18,3 +17,6 @@ class Config(object):
             else:
                 print("Unsupported/Unknown OS: ", platform.system, "please set DATAPATH")
         self.DATAPATH = DATAPATH
+        
+# class Config(metaclass=Config_setup):
+#     pass
