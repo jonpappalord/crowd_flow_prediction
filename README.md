@@ -81,11 +81,14 @@ We evaluate our model using different tessellation, evaluating them exploiting t
 </tbody>
 </table>
 <em>  Performance of the ST-ResNet and CrowdNet models for crowd flow prediction problem on the BikeNYC dataset. </em>
+<br />
 
 A visual comparison of the mean real crowd inflows with the mean crowd inflows predicted by STResNet and AdjNet is provided by the following image.
 
+<p>
 <img src = "https://github.com/jonpappalord/crowd_flow_prediction/blob/main/Figure/Heatmap_Inflow_1000m_30min.png?raw=1" style="width: 75%;"/>
 <em> Comparison of mean real crowd inflows (center) with those predicted by CrowdNet (left) and STResNet (right) using tile size of 1000m and time intervals of 30 minutes.</em>
+</p>
 
 ### Train
 
